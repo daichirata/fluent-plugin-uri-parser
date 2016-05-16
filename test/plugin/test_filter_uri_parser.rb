@@ -25,7 +25,7 @@ class URIParserFilterTest < Test::Unit::TestCase
     d1.run do
       d1.filter({ "url" => "http://example.com" }, @time)
       d1.filter({ "url" => "https://example.com/over/there?foo=bar&hoge=fuga" }, @time)
-      d1.filter({ "url" => "http://example.com/?id=25#time=1305212049" }, @time)
+      d1.filter({ "url" => "http://example.com:8080/?id=25#time=1305212049" }, @time)
     end
     filtered = d1.filtered_as_array
     assert_equal 3, filtered.length
@@ -49,7 +49,7 @@ class URIParserFilterTest < Test::Unit::TestCase
     data = filtered[2][2]
     assert_equal "http",            data["scheme"]
     assert_equal "example.com",     data["host"]
-    assert_equal 80,                data["port"]
+    assert_equal 8080,              data["port"]
     assert_equal "/",               data["path"]
     assert_equal "id=25",           data["query"]
     assert_equal "time=1305212049", data["fragment"]
