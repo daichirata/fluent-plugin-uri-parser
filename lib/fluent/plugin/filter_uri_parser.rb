@@ -1,11 +1,6 @@
 class Fluent::URIParserFilter < Fluent::Filter
   Fluent::Plugin.register_filter("uri_parser", self)
 
-  DEFAULT_PORT_MAP = {
-    "http" => 80,
-    "https" => 443
-  }
-
   config_param :key_name, :string
   config_param :hash_value_field, :string, default: nil
   config_param :inject_key_prefix, :string, default: nil
