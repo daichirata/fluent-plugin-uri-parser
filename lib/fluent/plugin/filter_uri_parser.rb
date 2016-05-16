@@ -22,7 +22,7 @@ class Fluent::URIParserFilter < Fluent::Filter
 
   def initialize
     super
-    require "uri"
+    require "addressable/uri"
   end
 
   def filter_stream(tag, es)
@@ -36,15 +36,15 @@ class Fluent::URIParserFilter < Fluent::Filter
       end
 
       begin
-        scheme, host, port, path, query, fragment = parse_uri(raw_value)
+        uri = Addressable::URI.parse(raw_value)
 
         values = {}
-        values[@out_key_scheme] = scheme if @out_key_scheme
-        values[@out_key_host] = host if @out_key_host
-        values[@out_key_port] = port if @out_key_port
-        values[@out_key_path] = path if @out_key_path
-        values[@out_key_query] = query if @out_key_query
-        values[@out_key_fragment] = fragment if @out_key_fragment
+        values[@out_key_scheme] = uri.scheme if @out_key_scheme
+        values[@out_key_host] = uri.host if @out_key_host
+        values[@out_key_port] = uri.inferred_port if @out_key_port
+        values[@out_key_path] = uri.path if @out_key_path
+        values[@out_key_query] = uri.query if @out_key_query
+        values[@out_key_fragment] = uri.fragment if @out_key_fragment
         values.reject! {|_, v| v.nil? } if @ignore_nil
 
         unless values.empty?
@@ -62,15 +62,5 @@ class Fluent::URIParserFilter < Fluent::Filter
     end
 
     new_es
-  end
-
-  private
-
-  def parse_uri(uri)
-    # URI.parse is useful, but it's very slow.
-    scheme, _, host, port, _, path, _, query, fragment = URI.split(uri)
-    port = port.nil? ? DEFAULT_PORT_MAP[scheme] : port.to_i
-
-    [scheme, host, port, path, query, fragment]
   end
 end
