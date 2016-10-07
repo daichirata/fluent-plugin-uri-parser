@@ -82,6 +82,33 @@ class URIParserFilterTest < Test::Unit::TestCase
     assert_equal "time=1305212049",   data["parsed"]["fragment"]
   end
 
+  def test_filter_json_value_field
+    config = %[
+      key_name url
+      json_value_field parsed
+      out_key_scheme scheme
+      out_key_host host
+      out_key_port port
+      out_key_path path
+      out_key_query query
+      out_key_fragment fragment
+    ]
+
+    d1 = create_driver(config, "test.no.change")
+    d1.run do
+      d1.filter({ "url" => "https://example.com/over/there?foo=bar&hoge=fuga#time=1305212049" }, @time)
+    end
+    filtered = d1.filtered_as_array
+
+    data = filtered[0][2]
+    assert_equal "https",             JSON.parse(data["parsed"])["scheme"]
+    assert_equal "example.com",       JSON.parse(data["parsed"])["host"]
+    assert_equal 443,                 JSON.parse(data["parsed"])["port"]
+    assert_equal "/over/there",       JSON.parse(data["parsed"])["path"]
+    assert_equal "foo=bar&hoge=fuga", JSON.parse(data["parsed"])["query"]
+    assert_equal "time=1305212049",   JSON.parse(data["parsed"])["fragment"]
+  end
+
   def test_filter_inject_key_prefix
     config = %[
       key_name url

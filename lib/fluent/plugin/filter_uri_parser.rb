@@ -3,6 +3,7 @@ class Fluent::URIParserFilter < Fluent::Filter
 
   config_param :key_name, :string
   config_param :hash_value_field, :string, default: nil
+  config_param :json_value_field, :string, default: nil
   config_param :inject_key_prefix, :string, default: nil
   config_param :suppress_parse_error_log, :bool, default: false
   config_param :ignore_key_not_exist, :bool, default: false
@@ -46,7 +47,18 @@ class Fluent::URIParserFilter < Fluent::Filter
           if @inject_key_prefix
             values = Hash[values.map{|k,v| [ @inject_key_prefix + k, v ]}]
           end
-          r = @hash_value_field ? { @hash_value_field => values } : values
+
+          unless @hash_value_field or @json_value_field then
+            r = values
+          else
+            if @hash_value_field
+              r = { @hash_value_field => values }
+            end
+            if @json_value_field
+              r = { @json_value_field => values.to_json }
+            end
+          end
+
           record = record.merge(r)
         end
 
