@@ -1,6 +1,6 @@
 # fluent-plugin-uri-parser
 
-[![wercker status](https://app.wercker.com/status/a735d29143f3a1a727fc65653bc81e2a/s "wercker status")](https://app.wercker.com/project/bykey/a735d29143f3a1a727fc65653bc81e2a)
+[![Gem Version](https://badge.fury.io/rb/fluent-plugin-uri-parser.svg)](https://badge.fury.io/rb/fluent-plugin-uri-parser) [![wercker status](https://app.wercker.com/status/a735d29143f3a1a727fc65653bc81e2a/s "wercker status")](https://app.wercker.com/project/bykey/a735d29143f3a1a727fc65653bc81e2a)
 
 This is a Fluentd plugin to parse uri and query string in log messages.
 
@@ -20,16 +20,74 @@ Or install it yourself as:
 
     $ gem install fluent-plugin-uri-parser
 
-## Usage
+## Component
 
-fluent-plugin-uri-parser includes 2 plugins.
+### URIParserFilter
 
-* uri_parser filter plugin
-* query_string_parser filter plugin
+This is a Fluentd plugin to parse and filtering uri in log messages and re-emit them.
 
-## TODO
+### QueryStringParserFilter
 
-* Write configuration sample in README.md
+This is a Fluentd plugin to parse and filtering query string in log messages and re-emit them.
+
+## Configuration
+
+```
+<filter>
+  @type uri_parser
+  key_name uri
+  inject_key_prefix parsed
+  # hash_value_field parsed
+  # suppress_parse_error_log false
+  # ignore_key_not_exist false
+  # ignore_nil false
+
+  out_key_scheme scheme
+  out_key_host host
+  out_key_port port
+  out_key_path path
+  out_key_query query
+  out_key_fragment fragment
+</match>
+# input string of data: {"uri": "http://example.com/path?foo=bar#t=1"}
+# output data: {"parsed.scheme":"http","parsed.host":"example.com","parsed.port":80,"parsed.path":"/path","parsed.query":"foo=bar","parsed.ragment":"t=1"}
+
+<filter>
+  @type query_string_parser
+  key_name parsed.query
+  hash_value_field query
+  # inject_key_prefix query
+  # suppress_parse_error_log false
+  # ignore_key_not_exist false
+</match>
+# input string of data: {"parsed.query": "foo=bar"}
+# output data: {"query":{"foo":"bar"}}
+
+```
+
+**key_name (Required)**
+
+Key of the value to be parsed in the record.
+
+**hash_value_field (Default: '')**
+
+If a value is set, the value after parsing is stored in hash with key specified value.
+
+**inject_key_prefix (Default: '')**
+
+If you set a value, set the value specified for the key after parsing as prefix.
+
+**suppress_parse_error_log (Default: false)**
+
+If set to `true`, no error log is output even if parsing fails.
+
+**ignore_key_not_exist (Default: false)**
+
+If set to `true`, if the field specified by `key_name` does not exist, the record will not be emit to the next stream. That means that the data will be lost there.
+
+**ignore_nil (Default: false)**
+
+If set to `true`, exclude key if the value after parse is nil.
 
 ## Development
 
