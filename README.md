@@ -46,7 +46,7 @@ This is a Fluentd plugin to parse and filtering query string in log messages and
   out_key_path path
   out_key_query query
   out_key_fragment fragment
-</match>
+</filter>
 # input string of data: {"uri": "http://example.com/path?foo=bar#t=1"}
 # output data: {"parsed.scheme":"http","parsed.host":"example.com","parsed.port":80,"parsed.path":"/path","parsed.query":"foo=bar","parsed.ragment":"t=1"}
 
@@ -57,7 +57,7 @@ This is a Fluentd plugin to parse and filtering query string in log messages and
   # inject_key_prefix query
   # suppress_parse_error_log false
   # ignore_key_not_exist false
-</match>
+</filter>
 # input string of data: {"parsed.query": "foo=bar"}
 # output data: {"query":{"foo":"bar"}}
 
