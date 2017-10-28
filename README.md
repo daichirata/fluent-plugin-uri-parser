@@ -89,6 +89,11 @@ If set to `true`, if the field specified by `key_name` does not exist, the recor
 
 If set to `true`, exclude key if the value after parse is nil.
 
+**multi_value_params (Default: false)**
+
+If set to `true`, then resulting values would be arrays containing
+potentially multiple values of a given parameter.
+
 ## Development
 
 After checking out the repo, run `bin/setup` to install dependencies. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
