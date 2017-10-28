@@ -4,21 +4,19 @@
 
 This is a Fluentd plugin to parse uri and query string in log messages.
 
+## Requirements
+
+| fluent-plugin-uri-parser  | fluentd    | ruby   |
+|---------------------------|------------|--------|
+| >= 0.3.0                  | >= v0.14.0 | >= 2.1 |
+|  < 0.2.0                  | >= v0.12.0 | >= 1.9 |
+
 ## Installation
 
-Add this line to your application's Gemfile:
-
-```ruby
-gem 'fluent-plugin-uri-parser'
+``` shell
+$ gem install fluent-plugin-uri-parser -v "~> 0.2"  # for fluentd v0.12 or later
+$ gem install fluent-plugin-uri-parser              # for fluentd v0.14 or later
 ```
-
-And then execute:
-
-    $ bundle
-
-Or install it yourself as:
-
-    $ gem install fluent-plugin-uri-parser
 
 ## Component
 

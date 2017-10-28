@@ -3,11 +3,12 @@ require "helper"
 class QueryStringParserFilterTest < Test::Unit::TestCase
   def setup
     Fluent::Test.setup
-    @time = Time.parse("2016-01-01 00:00:00").to_i
+    @tag = "test.no.change"
+    @time = Fluent::EventTime.from_time(Time.parse("2016-01-01 00:00:00"))
   end
 
-  def create_driver(conf, tag = "test")
-    Fluent::Test::FilterTestDriver.new(Fluent::QueryStringParserFilter, tag).configure(conf)
+  def create_driver(conf)
+    Fluent::Test::Driver::Filter.new(Fluent::Plugin::QueryStringParserFilter).configure(conf)
   end
 
   def test_filter
@@ -15,16 +16,32 @@ class QueryStringParserFilterTest < Test::Unit::TestCase
       key_name query
     ]
 
-    d1 = create_driver(config, "test.no.change")
-    d1.run do
-      d1.filter({ "query" => "foo=bar&hoge=fuga" }, @time)
+    d1 = create_driver(config)
+    d1.run(default_tag: @tag) do
+      d1.feed(@time, { "query" => "foo=bar&hoge=fuga" })
     end
-    filtered = d1.filtered_as_array
+    records = d1.filtered_records
 
-    data = filtered[0][2]
-    assert_equal "foo=bar&hoge=fuga", data["query"]
-    assert_equal "bar", data["foo"]
-    assert_equal "fuga", data["hoge"]
+    assert_equal 1, records.length
+
+    assert_equal "foo=bar&hoge=fuga", records[0]["query"]
+    assert_equal "bar",               records[0]["foo"]
+    assert_equal "fuga",              records[0]["hoge"]
+  end
+
+  def test_filter_ignore_key_not_exist
+    config = %[
+      key_name query
+      ignore_key_not_exist true
+    ]
+
+    d1 = create_driver(config)
+    d1.run(default_tag: @tag) do
+      d1.feed(@time, { "query1" => "foo=bar&hoge=fuga" })
+    end
+    records = d1.filtered_records
+
+    assert_equal 0, records.length
   end
 
   def test_filter_hash_value_field
@@ -33,16 +50,17 @@ class QueryStringParserFilterTest < Test::Unit::TestCase
       hash_value_field parsed
     ]
 
-    d1 = create_driver(config, "test.no.change")
-    d1.run do
-      d1.filter({ "query" => "foo=bar&hoge=fuga" }, @time)
+    d1 = create_driver(config)
+    d1.run(default_tag: @tag) do
+      d1.feed(@time, { "query" => "foo=bar&hoge=fuga" })
     end
-    filtered = d1.filtered_as_array
+    records = d1.filtered_records
 
-    data = filtered[0][2]
-    assert_equal "foo=bar&hoge=fuga", data["query"]
-    assert_equal "bar", data["parsed"]["foo"]
-    assert_equal "fuga", data["parsed"]["hoge"]
+    assert_equal 1, records.length
+
+    assert_equal "foo=bar&hoge=fuga", records[0]["query"]
+    assert_equal "bar",               records[0]["parsed"]["foo"]
+    assert_equal "fuga",              records[0]["parsed"]["hoge"]
   end
 
   def test_filter_multi_value_params
@@ -52,33 +70,35 @@ class QueryStringParserFilterTest < Test::Unit::TestCase
       multi_value_params true
     ]
 
-    d1 = create_driver(config, "test.no.change")
-    d1.run do
-      d1.filter({ "query" => "foo=bar1&hoge=fuga&foo=bar2" }, @time)
+    d1 = create_driver(config)
+    d1.run(default_tag: @tag) do
+      d1.feed(@time, { "query" => "foo=bar1&hoge=fuga&foo=bar2" })
     end
-    filtered = d1.filtered_as_array
+    records = d1.filtered_records
 
-    data = filtered[0][2]
-    assert_equal "foo=bar1&hoge=fuga&foo=bar2", data["query"]
-    assert_equal ["bar1", "bar2"], data["parsed"]["foo"]
-    assert_equal ["fuga"], data["parsed"]["hoge"]
+    assert_equal 1, records.length
+
+    assert_equal "foo=bar1&hoge=fuga&foo=bar2", records[0]["query"]
+    assert_equal ["bar1", "bar2"],              records[0]["parsed"]["foo"]
+    assert_equal ["fuga"],                      records[0]["parsed"]["hoge"]
   end
-  
+
   def test_filter_inject_key_prefix
     config = %[
       key_name query
       inject_key_prefix parsed.
     ]
 
-    d1 = create_driver(config, "test.no.change")
-    d1.run do
-      d1.filter({ "query" => "foo=bar&hoge=fuga" }, @time)
+    d1 = create_driver(config)
+    d1.run(default_tag: @tag) do
+      d1.feed(@time, { "query" => "foo=bar&hoge=fuga" })
     end
-    filtered = d1.filtered_as_array
+    records = d1.filtered_records
 
-    data = filtered[0][2]
-    assert_equal "foo=bar&hoge=fuga", data["query"]
-    assert_equal "bar", data["parsed.foo"]
-    assert_equal "fuga", data["parsed.hoge"]
+    assert_equal 1, records.length
+
+    assert_equal "foo=bar&hoge=fuga", records[0]["query"]
+    assert_equal "bar",               records[0]["parsed.foo"]
+    assert_equal "fuga",              records[0]["parsed.hoge"]
   end
 end
