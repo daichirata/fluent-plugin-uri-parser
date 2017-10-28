@@ -6,6 +6,7 @@ class Fluent::QueryStringParserFilter < Fluent::Filter
   config_param :inject_key_prefix, :string, default: nil
   config_param :suppress_parse_error_log, :bool, default: false
   config_param :ignore_key_not_exist, :bool, default: false
+  config_param :multi_value_params, :bool, default: false
 
   def initialize
     super
@@ -23,9 +24,17 @@ class Fluent::QueryStringParserFilter < Fluent::Filter
       end
 
       begin
-        values = Hash[URI.decode_www_form(raw_value)]
+        params = URI.decode_www_form(raw_value)
 
-        unless values.empty?
+        unless params.empty?
+
+          if @multi_value_params
+            values = Hash.new {|h,k| h[k] = [] }
+            params.each{|pair| values[pair[0]].push(pair[1])}
+          else
+            values = Hash[params]
+          end
+          
           if @inject_key_prefix
             values = Hash[values.map{|k,v| [ @inject_key_prefix + k, v ]}]
           end
