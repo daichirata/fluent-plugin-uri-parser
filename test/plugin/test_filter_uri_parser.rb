@@ -3,11 +3,12 @@ require "helper"
 class URIParserFilterTest < Test::Unit::TestCase
   def setup
     Fluent::Test.setup
-    @time = Time.parse("2016-01-01 00:00:00").to_i
+    @tag = "test.no.change"
+    @time = Fluent::EventTime.from_time(Time.parse("2016-01-01 00:00:00"))
   end
 
-  def create_driver(conf, tag = "test")
-    Fluent::Test::FilterTestDriver.new(Fluent::URIParserFilter, tag).configure(conf)
+  def create_driver(conf)
+    Fluent::Test::Driver::Filter.new(Fluent::Plugin::URIParserFilter).configure(conf)
   end
 
   def test_filter
@@ -21,38 +22,51 @@ class URIParserFilterTest < Test::Unit::TestCase
       out_key_fragment fragment
     ]
 
-    d1 = create_driver(config, "test.no.change")
-    d1.run do
-      d1.filter({ "url" => "http://example.com" }, @time)
-      d1.filter({ "url" => "https://example.com/over/there?foo=bar&hoge=fuga" }, @time)
-      d1.filter({ "url" => "http://example.com:8080/?id=25#time=1305212049" }, @time)
+    d1 = create_driver(config)
+    d1.run(default_tag: @tag) do
+      d1.feed(@time, { "url" => "http://example.com" })
+      d1.feed(@time, { "url" => "https://example.com/over/there?foo=bar&hoge=fuga" })
+      d1.feed(@time, { "url" => "http://example.com:8080/?id=25#time=1305212049" })
     end
-    filtered = d1.filtered_as_array
-    assert_equal 3, filtered.length
+    records = d1.filtered_records
 
-    data = filtered[0][2]
-    assert_equal "http",        data["scheme"]
-    assert_equal "example.com", data["host"]
-    assert_equal 80,            data["port"]
-    assert_equal "" ,           data["path"]
-    assert_equal nil,           data["query"]
-    assert_equal nil,           data["fragment"]
+    assert_equal 3, records.length
 
-    data = filtered[1][2]
-    assert_equal "https",             data["scheme"]
-    assert_equal "example.com",       data["host"]
-    assert_equal 443,                 data["port"]
-    assert_equal "/over/there",       data["path"]
-    assert_equal "foo=bar&hoge=fuga", data["query"]
-    assert_equal nil,                 data["fragment"]
+    assert_equal "http",              records[0]["scheme"]
+    assert_equal "example.com",       records[0]["host"]
+    assert_equal 80,                  records[0]["port"]
+    assert_equal "" ,                 records[0]["path"]
+    assert_equal nil,                 records[0]["query"]
+    assert_equal nil,                 records[0]["fragment"]
 
-    data = filtered[2][2]
-    assert_equal "http",            data["scheme"]
-    assert_equal "example.com",     data["host"]
-    assert_equal 8080,              data["port"]
-    assert_equal "/",               data["path"]
-    assert_equal "id=25",           data["query"]
-    assert_equal "time=1305212049", data["fragment"]
+    assert_equal "https",             records[1]["scheme"]
+    assert_equal "example.com",       records[1]["host"]
+    assert_equal 443,                 records[1]["port"]
+    assert_equal "/over/there",       records[1]["path"]
+    assert_equal "foo=bar&hoge=fuga", records[1]["query"]
+    assert_equal nil,                 records[1]["fragment"]
+
+    assert_equal "http",              records[2]["scheme"]
+    assert_equal "example.com",       records[2]["host"]
+    assert_equal 8080,                records[2]["port"]
+    assert_equal "/",                 records[2]["path"]
+    assert_equal "id=25",             records[2]["query"]
+    assert_equal "time=1305212049",   records[2]["fragment"]
+  end
+
+  def test_filter_ignore_key_not_exist
+    config = %[
+      key_name query
+      ignore_key_not_exist true
+    ]
+
+    d1 = create_driver(config)
+    d1.run(default_tag: @tag) do
+      d1.feed(@time, { "query1" => "foo=bar&hoge=fuga" })
+    end
+    records = d1.filtered_records
+
+    assert_equal 0, records.length
   end
 
   def test_filter_hash_value_field
@@ -67,19 +81,20 @@ class URIParserFilterTest < Test::Unit::TestCase
       out_key_fragment fragment
     ]
 
-    d1 = create_driver(config, "test.no.change")
-    d1.run do
-      d1.filter({ "url" => "https://example.com/over/there?foo=bar&hoge=fuga#time=1305212049" }, @time)
+    d1 = create_driver(config)
+    d1.run(default_tag: @tag) do
+      d1.feed(@time, { "url" => "https://example.com/over/there?foo=bar&hoge=fuga#time=1305212049" })
     end
-    filtered = d1.filtered_as_array
+    records = d1.filtered_records
 
-    data = filtered[0][2]
-    assert_equal "https",             data["parsed"]["scheme"]
-    assert_equal "example.com",       data["parsed"]["host"]
-    assert_equal 443,                 data["parsed"]["port"]
-    assert_equal "/over/there",       data["parsed"]["path"]
-    assert_equal "foo=bar&hoge=fuga", data["parsed"]["query"]
-    assert_equal "time=1305212049",   data["parsed"]["fragment"]
+    assert_equal 1, records.length
+
+    assert_equal "https",             records[0]["parsed"]["scheme"]
+    assert_equal "example.com",       records[0]["parsed"]["host"]
+    assert_equal 443,                 records[0]["parsed"]["port"]
+    assert_equal "/over/there",       records[0]["parsed"]["path"]
+    assert_equal "foo=bar&hoge=fuga", records[0]["parsed"]["query"]
+    assert_equal "time=1305212049",   records[0]["parsed"]["fragment"]
   end
 
   def test_filter_inject_key_prefix
@@ -94,19 +109,20 @@ class URIParserFilterTest < Test::Unit::TestCase
       out_key_fragment fragment
     ]
 
-    d1 = create_driver(config, "test.no.change")
-    d1.run do
-      d1.filter({ "url" => "https://example.com/over/there?foo=bar&hoge=fuga#time=1305212049" }, @time)
+    d1 = create_driver(config)
+    d1.run(default_tag: @tag) do
+      d1.feed(@time, { "url" => "https://example.com/over/there?foo=bar&hoge=fuga#time=1305212049" })
     end
-    filtered = d1.filtered_as_array
+    records = d1.filtered_records
 
-    data = filtered[0][2]
-    assert_equal "https",             data["parsed.scheme"]
-    assert_equal "example.com",       data["parsed.host"]
-    assert_equal 443,                 data["parsed.port"]
-    assert_equal "/over/there",       data["parsed.path"]
-    assert_equal "foo=bar&hoge=fuga", data["parsed.query"]
-    assert_equal "time=1305212049",   data["parsed.fragment"]
+    assert_equal 1, records.length
+
+    assert_equal "https",             records[0]["parsed.scheme"]
+    assert_equal "example.com",       records[0]["parsed.host"]
+    assert_equal 443,                 records[0]["parsed.port"]
+    assert_equal "/over/there",       records[0]["parsed.path"]
+    assert_equal "foo=bar&hoge=fuga", records[0]["parsed.query"]
+    assert_equal "time=1305212049",   records[0]["parsed.fragment"]
   end
 
   def test_filter_ignore_nil
@@ -121,18 +137,20 @@ class URIParserFilterTest < Test::Unit::TestCase
       out_key_fragment fragment
     ]
 
-    d1 = create_driver(config, "test.no.change")
-    d1.run do
-      d1.filter({ "url" => "https://example.com/over/there" }, @time)
+    d1 = create_driver(config)
+    d1.run(default_tag: @tag) do
+      d1.feed(@time, { "url" => "https://example.com/over/there" })
     end
-    filtered = d1.filtered_as_array
+    records = d1.filtered_records
 
-    data = filtered[0][2]
-    assert_equal "https",        data["scheme"]
-    assert_equal "example.com",  data["host"]
-    assert_equal 443,            data["port"]
-    assert_equal "/over/there",  data["path"]
-    assert_not_include data.keys, "query"
-    assert_not_include data.keys, "fragment"
+    assert_equal 1, records.length
+
+    assert_equal "https",        records[0]["scheme"]
+    assert_equal "example.com",  records[0]["host"]
+    assert_equal 443,            records[0]["port"]
+    assert_equal "/over/there",  records[0]["path"]
+
+    assert_not_include records[0].keys, "query"
+    assert_not_include records[0].keys, "fragment"
   end
 end
