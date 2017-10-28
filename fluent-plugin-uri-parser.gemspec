@@ -4,7 +4,7 @@ $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 
 Gem::Specification.new do |spec|
   spec.name          = "fluent-plugin-uri-parser"
-  spec.version       = "0.1.0"
+  spec.version       = "0.2.0"
   spec.authors       = ["Daichi HIRATA"]
   spec.email         = ["bunny.hop.md@gmail.com"]
   spec.license       = "Apache-2.0"
