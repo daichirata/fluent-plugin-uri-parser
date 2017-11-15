@@ -13,7 +13,7 @@ module Fluent
 
       def initialize
         super
-        require "uri"
+        require "addressable/uri"
       end
 
       def filter(tag, time, record)
@@ -27,7 +27,7 @@ module Fluent
         end
 
         begin
-          params = URI.decode_www_form(raw_value)
+          params = Addressable::URI.form_unencode(raw_value)
 
           unless params.empty?
             if @multi_value_params
