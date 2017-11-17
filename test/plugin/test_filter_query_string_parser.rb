@@ -1,3 +1,4 @@
+# coding: utf-8
 require "helper"
 
 class QueryStringParserFilterTest < Test::Unit::TestCase
@@ -28,6 +29,23 @@ class QueryStringParserFilterTest < Test::Unit::TestCase
     assert_equal "bar",               records[0]["foo"]
     assert_equal "fuga",              records[0]["hoge"]
   end
+
+  def test_filter_non_ascii
+    config = %[
+      key_name query
+    ]
+
+    d1 = create_driver(config)
+    d1.run(default_tag: @tag) do
+      d1.feed(@time, { "query" => "тест=тестович" })
+    end
+    records = d1.filtered_records
+
+    assert_equal 1, records.length
+
+    assert_equal "тестович", records[0]["тест"]
+  end
+
 
   def test_filter_ignore_key_not_exist
     config = %[
