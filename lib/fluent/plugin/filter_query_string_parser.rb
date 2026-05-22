@@ -27,6 +27,7 @@ module Fluent
 
         begin
           params = Addressable::URI.form_unencode(raw_value)
+          params = params.reject {|k, _| k.nil? || k.empty? }
 
           unless params.empty?
             if @multi_value_params
