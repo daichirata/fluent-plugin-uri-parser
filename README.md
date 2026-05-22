@@ -1,6 +1,6 @@
 # fluent-plugin-uri-parser
 
-[![Gem Version](https://badge.fury.io/rb/fluent-plugin-uri-parser.svg)](https://badge.fury.io/rb/fluent-plugin-uri-parser) [![wercker status](https://app.wercker.com/status/a735d29143f3a1a727fc65653bc81e2a/s "wercker status")](https://app.wercker.com/project/bykey/a735d29143f3a1a727fc65653bc81e2a)
+[![Gem Version](https://badge.fury.io/rb/fluent-plugin-uri-parser.svg)](https://badge.fury.io/rb/fluent-plugin-uri-parser) [![test](https://github.com/daichirata/fluent-plugin-uri-parser/actions/workflows/test.yml/badge.svg)](https://github.com/daichirata/fluent-plugin-uri-parser/actions/workflows/test.yml)
 
 This is a Fluentd plugin to parse uri and query string in log messages.
 
@@ -8,14 +8,14 @@ This is a Fluentd plugin to parse uri and query string in log messages.
 
 | fluent-plugin-uri-parser  | fluentd    | ruby   |
 |---------------------------|------------|--------|
+| >= 0.4.0                  | >= v1.0.0  | >= 3.2 |
 | >= 0.3.0                  | >= v0.14.0 | >= 2.1 |
 |  < 0.2.0                  | >= v0.12.0 | >= 1.9 |
 
 ## Installation
 
 ``` shell
-$ gem install fluent-plugin-uri-parser -v "~> 0.2"  # for fluentd v0.12 or later
-$ gem install fluent-plugin-uri-parser              # for fluentd v0.14 or later
+$ gem install fluent-plugin-uri-parser
 ```
 
 ## Component

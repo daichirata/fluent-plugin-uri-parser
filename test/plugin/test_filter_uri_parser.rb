@@ -4,7 +4,7 @@ class URIParserFilterTest < Test::Unit::TestCase
   def setup
     Fluent::Test.setup
     @tag = "test.no.change"
-    @time = Fluent::EventTime.from_time(Time.parse("2016-01-01 00:00:00"))
+    @time = event_time("2016-01-01 00:00:00")
   end
 
   def create_driver(conf)
@@ -152,5 +152,57 @@ class URIParserFilterTest < Test::Unit::TestCase
 
     assert_not_include records[0].keys, "query"
     assert_not_include records[0].keys, "fragment"
+  end
+
+  def test_filter_emit_invalid_record_to_error_on_missing_key
+    config = %[
+      key_name url
+      out_key_host host
+    ]
+
+    d1 = create_driver(config)
+    d1.run(default_tag: @tag) do
+      d1.feed(@time, { "other" => "value" })
+    end
+
+    assert_equal 1, d1.error_events.length
+    tag, _time, record, error = d1.error_events.first
+    assert_equal @tag, tag
+    assert_equal({ "other" => "value" }, record)
+    assert_kind_of ArgumentError, error
+  end
+
+  def test_filter_parse_error_is_swallowed
+    config = %[
+      key_name url
+      out_key_host host
+    ]
+
+    d1 = create_driver(config)
+    d1.run(default_tag: @tag) do
+      d1.feed(@time, { "url" => "http://example.com:notaport" })
+    end
+    records = d1.filtered_records
+
+    assert_equal 1, records.length
+    assert_not_include records[0].keys, "host"
+    assert_equal "http://example.com:notaport", records[0]["url"]
+  end
+
+  def test_filter_suppress_parse_error_log
+    config = %[
+      key_name url
+      suppress_parse_error_log true
+      out_key_host host
+    ]
+
+    d1 = create_driver(config)
+    assert_nothing_raised do
+      d1.run(default_tag: @tag) do
+        d1.feed(@time, { "url" => "http://example.com:notaport" })
+      end
+    end
+
+    assert_equal 1, d1.filtered_records.length
   end
 end

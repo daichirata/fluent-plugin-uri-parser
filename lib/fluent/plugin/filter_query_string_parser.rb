@@ -1,3 +1,6 @@
+require 'fluent/plugin/filter'
+require 'addressable/uri'
+
 module Fluent
   module Plugin
     class QueryStringParserFilter < Filter
@@ -10,11 +13,6 @@ module Fluent
       config_param :ignore_key_not_exist, :bool, default: false
       config_param :emit_invalid_record_to_error, :bool, default: true
       config_param :multi_value_params, :bool, default: false
-
-      def initialize
-        super
-        require "addressable/uri"
-      end
 
       def filter(tag, time, record)
         raw_value = record[@key_name]
