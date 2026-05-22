@@ -23,11 +23,9 @@ URL strings sitting in a single log field are a black box — you can't filter b
 
 ## Requirements
 
-| fluent-plugin-uri-parser | fluentd     | ruby   |
-| ------------------------ | ----------- | ------ |
-| >= 0.4.0                 | >= v1.0.0   | >= 3.2 |
-| >= 0.3.0                 | >= v0.14.0  | >= 2.1 |
-|  < 0.2.0                 | >= v0.12.0  | >= 1.9 |
+| fluent-plugin-uri-parser | fluentd   | ruby   |
+| ------------------------ | --------- | ------ |
+| >= 0.4.0                 | >= v1.0.0 | >= 3.2 |
 
 ## Installation
 
