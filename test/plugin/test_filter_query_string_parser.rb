@@ -5,7 +5,7 @@ class QueryStringParserFilterTest < Test::Unit::TestCase
   def setup
     Fluent::Test.setup
     @tag = "test.no.change"
-    @time = Fluent::EventTime.from_time(Time.parse("2016-01-01 00:00:00"))
+    @time = event_time("2016-01-01 00:00:00")
   end
 
   def create_driver(conf)
@@ -118,5 +118,53 @@ class QueryStringParserFilterTest < Test::Unit::TestCase
     assert_equal "foo=bar&hoge=fuga", records[0]["query"]
     assert_equal "bar",               records[0]["parsed.foo"]
     assert_equal "fuga",              records[0]["parsed.hoge"]
+  end
+
+  def test_filter_emit_invalid_record_to_error_on_missing_key
+    config = %[
+      key_name query
+    ]
+
+    d1 = create_driver(config)
+    d1.run(default_tag: @tag) do
+      d1.feed(@time, { "other" => "foo=bar" })
+    end
+
+    assert_equal 1, d1.error_events.length
+    tag, _time, record, error = d1.error_events.first
+    assert_equal @tag, tag
+    assert_equal({ "other" => "foo=bar" }, record)
+    assert_kind_of ArgumentError, error
+  end
+
+  def test_filter_parse_error_is_swallowed
+    config = %[
+      key_name query
+    ]
+
+    d1 = create_driver(config)
+    d1.run(default_tag: @tag) do
+      d1.feed(@time, { "query" => 12345 })
+    end
+    records = d1.filtered_records
+
+    assert_equal 1, records.length
+    assert_equal({ "query" => 12345 }, records[0])
+  end
+
+  def test_filter_suppress_parse_error_log
+    config = %[
+      key_name query
+      suppress_parse_error_log true
+    ]
+
+    d1 = create_driver(config)
+    assert_nothing_raised do
+      d1.run(default_tag: @tag) do
+        d1.feed(@time, { "query" => 12345 })
+      end
+    end
+
+    assert_equal 1, d1.filtered_records.length
   end
 end

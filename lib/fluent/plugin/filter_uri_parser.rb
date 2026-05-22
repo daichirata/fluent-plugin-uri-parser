@@ -1,3 +1,6 @@
+require 'fluent/plugin/filter'
+require 'addressable/uri'
+
 module Fluent
   module Plugin
     class URIParserFilter < Filter
@@ -17,11 +20,6 @@ module Fluent
       config_param :out_key_path, :string, default: nil
       config_param :out_key_query, :string, default: nil
       config_param :out_key_fragment, :string, default: nil
-
-      def initialize
-        super
-        require "addressable/uri"
-      end
 
       def filter(tag, time, record)
         raw_value = record[@key_name]
