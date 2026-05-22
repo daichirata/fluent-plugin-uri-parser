@@ -13,6 +13,7 @@ module Fluent
       config_param :ignore_key_not_exist, :bool, default: false
       config_param :emit_invalid_record_to_error, :bool, default: true
       config_param :multi_value_params, :bool, default: false
+      config_param :multi_value_param_names, :array, default: nil
 
       def filter(tag, time, record)
         raw_value = record[@key_name]
@@ -31,6 +32,15 @@ module Fluent
             if @multi_value_params
               values = Hash.new {|h,k| h[k] = [] }
               params.each{|pair| values[pair[0]].push(pair[1])}
+            elsif @multi_value_param_names
+              values = {}
+              params.each do |k, v|
+                if @multi_value_param_names.include?(k)
+                  (values[k] ||= []) << v
+                else
+                  values[k] = v
+                end
+              end
             else
               values = Hash[params]
             end

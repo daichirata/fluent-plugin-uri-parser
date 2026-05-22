@@ -101,6 +101,62 @@ class QueryStringParserFilterTest < Test::Unit::TestCase
     assert_equal ["fuga"],                      records[0]["parsed"]["hoge"]
   end
 
+  def test_filter_multi_value_param_names
+    config = %[
+      key_name query
+      hash_value_field parsed
+      multi_value_param_names foo
+    ]
+
+    d1 = create_driver(config)
+    d1.run(default_tag: @tag) do
+      d1.feed(@time, { "query" => "foo=bar1&hoge=fuga&foo=bar2" })
+    end
+    records = d1.filtered_records
+
+    assert_equal 1, records.length
+    assert_equal ["bar1", "bar2"], records[0]["parsed"]["foo"]
+    assert_equal "fuga",           records[0]["parsed"]["hoge"]
+  end
+
+  def test_filter_multi_value_param_names_with_single_occurrence
+    config = %[
+      key_name query
+      hash_value_field parsed
+      multi_value_param_names foo,bar
+    ]
+
+    d1 = create_driver(config)
+    d1.run(default_tag: @tag) do
+      d1.feed(@time, { "query" => "foo=1&bar=2&hoge=fuga" })
+    end
+    records = d1.filtered_records
+
+    assert_equal 1, records.length
+    assert_equal ["1"],   records[0]["parsed"]["foo"]
+    assert_equal ["2"],   records[0]["parsed"]["bar"]
+    assert_equal "fuga",  records[0]["parsed"]["hoge"]
+  end
+
+  def test_filter_multi_value_params_takes_precedence_over_names
+    config = %[
+      key_name query
+      hash_value_field parsed
+      multi_value_params true
+      multi_value_param_names foo
+    ]
+
+    d1 = create_driver(config)
+    d1.run(default_tag: @tag) do
+      d1.feed(@time, { "query" => "foo=bar1&hoge=fuga&foo=bar2" })
+    end
+    records = d1.filtered_records
+
+    assert_equal 1, records.length
+    assert_equal ["bar1", "bar2"], records[0]["parsed"]["foo"]
+    assert_equal ["fuga"],         records[0]["parsed"]["hoge"]
+  end
+
   def test_filter_inject_key_prefix
     config = %[
       key_name query
