@@ -150,6 +150,8 @@ When a component is missing (no query, no fragment, etc.) the default is to emit
 
 Decomposes a query string field into individual parameters.
 
+> Pairs with an empty key (e.g. the leading `&` in `&foo=1`) are silently dropped — they're noise from user-supplied URLs and never represent a real parameter.
+
 ### Minimal example
 
 ```aconf

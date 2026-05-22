@@ -30,6 +30,29 @@ class QueryStringParserFilterTest < Test::Unit::TestCase
     assert_equal "fuga",              records[0]["hoge"]
   end
 
+  def test_filter_drops_empty_keys
+    config = %[
+      key_name query
+      hash_value_field parsed
+    ]
+
+    d1 = create_driver(config)
+    d1.run(default_tag: @tag) do
+      d1.feed(@time, { "query" => "&partnerid=12345" })
+      d1.feed(@time, { "query" => "=value&foo=bar" })
+      d1.feed(@time, { "query" => "&&foo=bar&&" })
+      d1.feed(@time, { "query" => "foo=&bar=baz" })
+    end
+    records = d1.filtered_records
+
+    assert_equal 4, records.length
+
+    assert_equal({ "partnerid" => "12345" }, records[0]["parsed"])
+    assert_equal({ "foo" => "bar" },         records[1]["parsed"])
+    assert_equal({ "foo" => "bar" },         records[2]["parsed"])
+    assert_equal({ "foo" => "", "bar" => "baz" }, records[3]["parsed"])
+  end
+
   def test_filter_non_ascii
     config = %[
       key_name query
